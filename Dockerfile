@@ -8,7 +8,7 @@ ARG VERSION
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
 
-ADD . /tmp
+ADD docker-gc /tmp
 
 WORKDIR /tmp
 ENV DEBIAN_FRONTEND=noninteractive
