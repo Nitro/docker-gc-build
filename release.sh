@@ -17,7 +17,7 @@ VERSION="2:`cat ${PWD}/docker-gc/version.txt`~${COMMIT}"
 TAG="gonitro/docker-gc-build:${COMMIT}"
 AWS_REGION=us-west-2
 BUCKET=nitro-apt-repo
-NITRO_GPG_KEY=C5075270
+NITRO_GPG_KEY=`gpg --batch --search-keys  --with-colons infra-guild@gonitro.com 2>&1| sed -E -n 's/^pub:.*(........):.*:.*:.*::/\1/p'`
 
 printf  "[+] Using GPG %s for package signature\n" ${NITRO_GPG_KEY}
 
