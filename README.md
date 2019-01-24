@@ -19,3 +19,9 @@ Just executing a [Dry-run](https://en.wikipedia.org/wiki/Dry_run_(testing)):
 ```sh
 DRY_RUN=echo ./release.sh
 ```
+
+List repos packages
+```
+deb-s3 list --bucket=$BUCKET
+aws s3 ls --recursive s3://$BUCKET
+```
