@@ -1,16 +1,22 @@
 #!/bin/bash
 
-set -e
+set -o errexit
+set -o nounset
+set -o pipefail
 
-[ ! -f `which gpg` ] && {
-    echo 2>&1 "You need to install gnupg: brew install gnupg"
+die() {
+    echo "$1" >&2
     exit 2
 }
 
-[ ! -f `which deb-s3` ] && {
-    echo 2>&1 "You need to install deb-s3: gem install deb-s3"
-    exit 2
-}
+declare -a deps=(gpg deb-s3)
+
+for dep in ${deps[*]}
+do
+    [[ ! -f `which $dep` ]] && {
+        die "You need to install: $dep"
+    }
+done
 
 COMMIT=`(cd docker-gc && git rev-parse --short HEAD)`
 VERSION="2:`cat ${PWD}/docker-gc/version.txt`~${COMMIT}"
