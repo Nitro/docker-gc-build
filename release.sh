@@ -9,6 +9,22 @@ die() {
     exit 2
 }
 
+usage() {
+    cat <<EOF
+    ${0} [options] [arguments]
+
+    Arguments:
+
+    -b Set the S3 bucket name
+
+    Options:
+
+    -s Dry run (simulate)
+    -h Help
+EOF
+    exit 1
+}
+
 declare -a deps=(gpg deb-s3)
 
 for dep in ${deps[*]}
@@ -18,11 +34,25 @@ do
     }
 done
 
+while getopts ":b:hs" opt; do
+    case ${opt} in
+        b ) BUCKET=${OPTARG}
+            ;;
+        h ) usage
+            ;;
+        s ) DRY_RUN="echo "
+            ;;
+        \?) echo "Invalid Option: -${OPTARG}" 1>&2; exit 1
+            ;;
+    esac
+done
+
 COMMIT=`(cd docker-gc && git rev-parse --short HEAD)`
 VERSION="2:`cat ${PWD}/docker-gc/version.txt`~${COMMIT}"
 TAG="gonitro/docker-gc-build:${COMMIT}"
 AWS_REGION=us-west-2
-BUCKET=nitro-apt-repo
+BUCKET=${BUCKET:-nitro-apt-repo}
+DRY_RUN=${DRY_RUN:-}
 NITRO_GPG_KEY=`gpg --batch --search-keys  --with-colons infra-guild@gonitro.com 2>&1| sed -E -n 's/^pub:.*(........):.*:.*:.*::/\1/p'`
 
 printf  "[+] Using GPG %s for package signature\n" ${NITRO_GPG_KEY}
