@@ -29,7 +29,7 @@ declare -a deps=(gpg deb-s3)
 
 for dep in ${deps[*]}
 do
-    [[ ! -f `which $dep` ]] && {
+    [[ ! -f $(command -v "$dep") ]] && {
         die "You need to install: $dep"
     }
 done
@@ -47,27 +47,32 @@ while getopts ":b:hs" opt; do
     esac
 done
 
-COMMIT=`(cd docker-gc && git rev-parse --short HEAD)`
-VERSION="2:`cat ${PWD}/docker-gc/version.txt`~${COMMIT}"
+COMMIT=$( (cd docker-gc && git rev-parse --short HEAD) )
+VERSION="2:$(cat "${PWD}"/docker-gc/version.txt)~${COMMIT}"
 TAG="gonitro/docker-gc-build:${COMMIT}"
 AWS_REGION=us-west-2
 BUCKET=${BUCKET:-nitro-apt-repo}
 DRY_RUN=${DRY_RUN:-}
-NITRO_GPG_KEY=`gpg --batch --search-keys  --with-colons infra-guild@gonitro.com 2>&1| sed -E -n 's/^pub:.*(........):.*:.*:.*::/\1/p'`
+KEYSERVER=${KEYSERVER:-pgpkeys.eu}
+NITRO_GPG_KEY=$(gpg \
+    --keyserver "${KEYSERVER}" \
+    --batch \
+    --search-keys \
+    --with-colons infra-guild@gonitro.com 2>&1| sed -E -n 's/^pub:.*(........):.*:.*:.*::/\1/p')
 
-printf  "[+] Using GPG %s for package signature\n" ${NITRO_GPG_KEY}
+printf  "[+] Using GPG %s for package signature\n" "${NITRO_GPG_KEY}"
 
 $DRY_RUN docker build \
-    -t ${TAG} \
-    --build-arg VERSION=${VERSION} \
-    --build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-    --build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+    -t "${TAG}" \
+    --build-arg VERSION="${VERSION}" \
+    --build-arg AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+    --build-arg AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
     -f ./Dockerfile .
 
-$DRY_RUN docker run -v /tmp/:/tmp ${TAG} /bin/bash -c 'cp /docker-gc*.deb /tmp'
+$DRY_RUN docker run -v /tmp/:/tmp "${TAG}" /bin/bash -c 'cp /docker-gc*.deb /tmp'
 
-package=`ls /tmp/*.deb || :`
-printf "[+] Debian Package generated into '%s'\n" ${package}
+package=$(ls /tmp/*.deb || :)
+printf "[+] Debian Package generated into '%s'\n" "${package}"
 
 $DRY_RUN deb-s3 upload \
     --access-key-id=${AWS_ACCESS_KEY_ID} \
