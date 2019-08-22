@@ -19,8 +19,9 @@ usage() {
 
     Options:
 
-    -s Dry run (simulate)
     -h Help
+    -s Dry run (simulate)
+    -n Does not upload artifact (just build)
 EOF
     exit 1
 }
@@ -34,13 +35,15 @@ do
     }
 done
 
-while getopts ":b:hs" opt; do
+while getopts ":b:hsu" opt; do
     case ${opt} in
         b ) BUCKET=${OPTARG}
             ;;
         h ) usage
             ;;
         s ) DRY_RUN="echo "
+            ;;
+        u ) NO_UPLOAD=1
             ;;
         \?) echo "Invalid Option: -${OPTARG}" 1>&2; exit 1
             ;;
@@ -53,6 +56,7 @@ TAG="gonitro/docker-gc-build:${COMMIT}"
 AWS_REGION=us-west-2
 BUCKET=${BUCKET:-nitro-apt-repo}
 DRY_RUN=${DRY_RUN:-}
+NO_UPLOAD=${NO_UPLOAD:-}
 KEYSERVER=${KEYSERVER:-pgpkeys.eu}
 NITRO_GPG_KEY=$(gpg \
     --keyserver "${KEYSERVER}" \
@@ -74,12 +78,14 @@ $DRY_RUN docker run -v /tmp/:/tmp "${TAG}" /bin/bash -c 'cp /docker-gc*.deb /tmp
 package=$(ls /tmp/*.deb || :)
 printf "[+] Debian Package generated into '%s'\n" "${package}"
 
+if [[ -z ${NO_UPLOAD} ]]; then
 $DRY_RUN deb-s3 upload \
-    --access-key-id=${AWS_ACCESS_KEY_ID} \
-    --secret-access-key=${AWS_SECRET_ACCESS_KEY} \
-    --s3-region=${AWS_REGION} \
-    --bucket=${BUCKET} \
-    --sign=${NITRO_GPG_KEY} ${package} || exit 1
-printf "[+] Successfully uploaded package into %s\n" ${BUCKET}
+    --access-key-id="${AWS_ACCESS_KEY_ID}" \
+    --secret-access-key="${AWS_SECRET_ACCESS_KEY}" \
+    --s3-region="${AWS_REGION}" \
+    --bucket="${BUCKET}" \
+    --sign="${NITRO_GPG_KEY}" "${package}" || exit 1
+printf "[+] Successfully uploaded package into '%s'\n" "${BUCKET}"
+fi
 
 exit 0
