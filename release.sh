@@ -14,7 +14,8 @@ ${0##*/} [options] [arguments]
 
 Arguments:
 
--b Set the S3 bucket name
+-b Set the S3 bucket name (default: nitro-apt-repo)
+-r Set AWS region (default: us-west-2)
 
 Options:
 
@@ -38,7 +39,7 @@ do_prereq() {
 
 parse_args() {
     local OPTIND
-    while getopts ":b:hsn" opt; do
+    while getopts ":b:hsnr:" opt; do
         case ${opt} in
             b) BUCKET=${OPTARG}
                 ;;
@@ -47,6 +48,8 @@ parse_args() {
             s) DRY_RUN="echo "
                 ;;
             n) NO_UPLOAD=1
+                ;;
+            r) AWS_REGION=${OPTARG}
                 ;;
             \?) echo "Invalid Option: -${OPTARG}" 1>&2; exit 1
                 ;;
@@ -87,7 +90,7 @@ main() {
     COMMIT=$( (cd docker-gc && git rev-parse --short HEAD) )
     VERSION="2:$(cat "${PWD}"/docker-gc/version.txt)~${COMMIT}"
     TAG="gonitro/docker-gc-build:${COMMIT}"
-    AWS_REGION=us-west-2
+    AWS_REGION=${AWS_REGION:-us-west-2}
     BUCKET=${BUCKET:-nitro-apt-repo}
     DRY_RUN=${DRY_RUN:-}
     NO_UPLOAD=${NO_UPLOAD:-}
