@@ -37,6 +37,7 @@ do_prereq() {
 }
 
 parse_args() {
+    local OPTIND
     while getopts ":b:hsn" opt; do
         case ${opt} in
             b) BUCKET=${OPTARG}
