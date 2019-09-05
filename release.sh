@@ -10,7 +10,7 @@ die() {
 
 usage() {
     cat <<EOF
-${0} [options] [arguments]
+${0##*/} [options] [arguments]
 
 Arguments:
 
